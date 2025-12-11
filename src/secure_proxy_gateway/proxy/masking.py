@@ -1,7 +1,7 @@
 import re
 from typing import Iterable
 
-from core.models import MaskRule
+from ..core.models import MaskRule
 
 MASKABLE_CONTENT_TYPES = {
     "application/json",

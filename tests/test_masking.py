@@ -1,7 +1,7 @@
 import pytest
 
-from core.models import MaskRule
-from proxy.masking import mask_content
+from secure_proxy_gateway.core.models import MaskRule
+from secure_proxy_gateway.proxy.masking import mask_content
 
 
 def test_mask_content_applies_rules():

@@ -1,5 +1,5 @@
-from proxy.engine import match_route
-from core.models import RequestRules, ResponseRules, RouteConfig
+from secure_proxy_gateway.proxy.engine import match_route
+from secure_proxy_gateway.core.models import RequestRules, ResponseRules, RouteConfig
 
 
 def test_match_route_longest_prefix():

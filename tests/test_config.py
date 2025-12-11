@@ -3,8 +3,8 @@ from pathlib import Path
 
 import yaml
 
-from core import config_mgr
-from core.models import RequestRules, ResponseRules, RouteConfig, SystemConfig
+from secure_proxy_gateway.core import config_mgr
+from secure_proxy_gateway.core.models import RequestRules, ResponseRules, RouteConfig, SystemConfig
 
 
 def test_save_and_load_with_backup(tmp_path):

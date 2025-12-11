@@ -2,11 +2,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 
-from core.config_mgr import get_config, load_config
-from core.logging import configure_logging
-from proxy.client import close_http_client, init_http_client
-from proxy.engine import error_response, forward_request, match_route
-from web.routers import router as web_router
+from secure_proxy_gateway.core.config_mgr import get_config, load_config
+from secure_proxy_gateway.core.logging import configure_logging
+from secure_proxy_gateway.proxy.client import close_http_client, init_http_client
+from secure_proxy_gateway.proxy.engine import error_response, forward_request, match_route
+from secure_proxy_gateway.web.routers import router as web_router
 
 APP_VERSION = "1.0.0"
 

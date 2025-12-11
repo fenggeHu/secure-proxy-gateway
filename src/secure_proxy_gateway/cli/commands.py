@@ -7,10 +7,15 @@ import uvicorn
 from rich.console import Console
 from rich.table import Table
 
-from core.config_mgr import get_config, load_config, save_config, set_config
-from core.exceptions import ConfigError
-from core.models import MaskRule, RequestRules, ResponseRules, RouteConfig, SystemConfig
-from main import app as proxy_app
+from secure_proxy_gateway.core.config_mgr import get_config, load_config, save_config, set_config
+from secure_proxy_gateway.core.exceptions import ConfigError
+from secure_proxy_gateway.core.models import (
+    MaskRule,
+    RequestRules,
+    ResponseRules,
+    RouteConfig,
+    SystemConfig,
+)
 
 app = typer.Typer(help="Secure Proxy Gateway CLI")
 console = Console()
@@ -26,12 +31,14 @@ def start(host: Optional[str] = None, port: Optional[int] = None, reload: bool =
     config = load_config()
     serve_host = host or config.server.host
     serve_port = port or config.server.port
-    src_dir = Path(__file__).resolve().parents[1]
-    if reload:
-        # Reload requires an import string; point uvicorn to main in the src directory.
-        uvicorn.run("main:app", host=serve_host, port=serve_port, reload=True, app_dir=str(src_dir))
-    else:
-        uvicorn.run(proxy_app, host=serve_host, port=serve_port, reload=False)
+    src_dir = Path(__file__).resolve().parents[2]
+    uvicorn.run(
+        "secure_proxy_gateway.main:app",
+        host=serve_host,
+        port=serve_port,
+        reload=reload,
+        app_dir=str(src_dir),
+    )
 
 
 @app.command("ls")

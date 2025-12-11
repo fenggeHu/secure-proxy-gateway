@@ -7,10 +7,10 @@ import httpx
 from fastapi import Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 
-from core.config_mgr import get_config
-from core.models import RequestRules, RouteConfig, SystemConfig
-from proxy.client import get_http_client
-from proxy.masking import MASKABLE_CONTENT_TYPES, mask_content
+from ..core.config_mgr import get_config
+from ..core.models import RequestRules, RouteConfig, SystemConfig
+from ..proxy.client import get_http_client
+from ..proxy.masking import MASKABLE_CONTENT_TYPES, mask_content
 
 logger = logging.getLogger(__name__)
 

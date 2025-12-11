@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -5,8 +6,13 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 
-from core.config_mgr import get_config, save_config, set_config
-from core.models import SystemConfig
+# Ensure src directory is on sys.path for absolute imports
+_SRC_DIR = Path(__file__).resolve().parents[1]
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
+
+from ..core.config_mgr import get_config, save_config, set_config
+from ..core.models import SystemConfig
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))

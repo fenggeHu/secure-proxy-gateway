@@ -1,7 +1,7 @@
 import httpx
 
-from core.config_mgr import get_config
-from core.models import SystemConfig
+from ..core.config_mgr import get_config
+from ..core.models import SystemConfig
 
 _http_client: httpx.AsyncClient | None = None
 
@@ -19,6 +19,7 @@ async def init_http_client(config: SystemConfig | None = None) -> None:
             connect=cfg.proxy.timeout.connect,
             read=cfg.proxy.timeout.read,
             write=cfg.proxy.timeout.write,
+            pool=cfg.proxy.timeout.read,
         ),
         follow_redirects=False,
         limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
