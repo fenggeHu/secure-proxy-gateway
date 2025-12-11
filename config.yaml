@@ -20,8 +20,8 @@ proxy:
 
 routes:
   - name: "user-service"
-    path: "/api/users"
-    target: "https://internal-user-service.local"
+    path: "/api/docs"
+    target: "http://localhost:8000/docs#"
     method: "*"
     description: "用户服务代理"
     request_rules:

@@ -4,7 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Secure Proxy Gateway</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css"
+    />
     <script src="https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/yaml/yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/javascript/javascript.min.js"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -58,9 +65,15 @@
         color: #16a34a;
         margin-top: 8px;
       }
+      .CodeMirror {
+        height: 420px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+      }
     </style>
   </head>
   <body>
+    {% raw %}
     <header>
       <h2>Secure Proxy Gateway</h2>
     </header>
@@ -78,10 +91,18 @@
       </div>
 
       <div class="card">
-        <h3>Config JSON (full)</h3>
-        <textarea v-model="editableConfig" spellcheck="false"></textarea>
+        <h3>Config（config.yaml）</h3>
+        <textarea
+          id="config-editor"
+          v-model="editableConfig"
+          spellcheck="false"
+        ></textarea>
         <div style="margin-top: 10px">
           <button @click="saveConfig">Save</button>
+          <label style="margin-left: 12px; font-size: 0.9rem">
+            <input type="checkbox" v-model="usePlain" @change="onPlainToggle" />
+            纯文本编辑
+          </label>
         </div>
         <div class="error" v-if="error">{{ error }}</div>
         <div class="success" v-if="success">{{ success }}</div>
@@ -97,48 +118,166 @@
             editableConfig: "",
             error: "",
             success: "",
+            format: "yaml",
+            editor: null,
+            usePlain: false,
           };
         },
+        computed: {
+          editorMode() {
+            return this.format === "json" ? "application/json" : "yaml";
+          },
+        },
         methods: {
+          focusEditor() {
+            if (this.editor) {
+              try {
+                this.editor.focus();
+              } catch (e) {
+                console.warn("focus editor failed", e);
+              }
+            } else if (this.usePlain) {
+              const textarea = document.getElementById("config-editor");
+              if (textarea) textarea.focus();
+            }
+          },
+          ensureEditor() {
+            if (this.usePlain) {
+              this.destroyEditor();
+              return;
+            }
+            if (!this.editor) {
+              this.initEditor();
+            }
+          },
+          destroyEditor() {
+            if (this.editor) {
+              try {
+                this.editor.toTextArea();
+              } catch (err) {
+                console.error("toTextArea failed", err);
+              }
+              this.editor = null;
+            }
+          },
+          initEditor() {
+            if (this.usePlain || this.editor) return;
+            const textarea = document.getElementById("config-editor");
+            if (!textarea) return;
+
+            if (window.CodeMirror) {
+              try {
+                this.editor = CodeMirror.fromTextArea(textarea, {
+                  lineNumbers: true,
+                  mode: this.editorMode,
+                  lineWrapping: true,
+                  viewportMargin: Infinity,
+                  readOnly: false,
+                });
+                this.usePlain = false;
+                this.editor.on("change", () => {
+                  this.editableConfig = this.editor.getValue();
+                });
+                this.editor.refresh();
+              } catch (e) {
+                console.error("CodeMirror init failed, fallback to textarea", e);
+                this.editor = null;
+              }
+            }
+
+            if (!this.editor) {
+              this.usePlain = true;
+            }
+          },
+          onPlainToggle() {
+            if (this.usePlain) {
+              this.destroyEditor();
+              this.$nextTick(() =>
+                this.updateEditorContent(this.editableConfig)
+              );
+            } else {
+              this.$nextTick(() => {
+                this.initEditor();
+                this.updateEditorContent(this.editableConfig);
+                this.focusEditor();
+              });
+            }
+          },
+          updateEditorContent(content) {
+            const text = content || "";
+            if (this.editor) {
+              try {
+                const cursor = this.editor.getCursor();
+                this.editor.setValue(text);
+                this.editor.setCursor(cursor);
+                this.editor.setOption("mode", this.editorMode);
+                this.editor.refresh();
+              } catch (e) {
+                console.error("CodeMirror update failed, fallback to textarea", e);
+                try {
+                  this.editor.toTextArea();
+                } catch (err) {
+                  console.error("toTextArea failed", err);
+                }
+                this.editor = null;
+                this.usePlain = true;
+              }
+            } else if (this.usePlain) {
+              const textarea = document.getElementById("config-editor");
+              if (textarea) {
+                textarea.value = text;
+              }
+            }
+          },
           async fetchConfig() {
             this.error = "";
             const resp = await fetch("/api/config");
             if (!resp.ok) {
               this.error = "Failed to load config";
-              return;
+            } else {
+              const data = await resp.json();
+              this.format = data.format || "yaml";
+              this.config = data.config || data;
+              this.editableConfig =
+                typeof data.raw === "string"
+                  ? data.raw
+                  : JSON.stringify(this.config, null, 2);
             }
-            const data = await resp.json();
-            this.config = data;
-            this.editableConfig = JSON.stringify(data, null, 2);
+            this.$nextTick(() => {
+              this.initEditor();
+              this.updateEditorContent(this.editableConfig);
+              this.focusEditor();
+            });
           },
           async saveConfig() {
             this.error = "";
             this.success = "";
-            let parsed;
-            try {
-              parsed = JSON.parse(this.editableConfig);
-            } catch (err) {
-              this.error = "Invalid JSON: " + err;
-              return;
-            }
             const resp = await fetch("/api/config", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(parsed),
+              body: JSON.stringify({
+                content: this.editableConfig,
+                format: this.format,
+              }),
             });
             if (!resp.ok) {
               const detail = await resp.json().catch(() => ({}));
               this.error = detail.detail || "Save failed";
               return;
             }
+            const result = await resp.json().catch(() => ({}));
+            this.format = result.format || this.format;
             this.success = "Saved";
             this.fetchConfig();
           },
         },
         mounted() {
-          this.fetchConfig();
+          this.$nextTick(() => {
+            this.fetchConfig();
+          });
         },
       }).mount("#app");
     </script>
+    {% endraw %}
   </body>
 </html>
