@@ -164,6 +164,7 @@ cython_debug/
 nacos-data
 .DS_Store
 .conda
+config.yaml.bak
 
 # third_party
 third_party/

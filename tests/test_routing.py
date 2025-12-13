@@ -19,7 +19,8 @@ def test_match_route_longest_prefix():
             response_rules=ResponseRules(),
         ),
     ]
-    matched = match_route("/api/users/123", "GET", routes)
+    matched, has_path_match = match_route("/api/users/123", "GET", routes)
+    assert has_path_match is True
     assert matched is not None
     assert matched.name == "long"
 
@@ -35,5 +36,11 @@ def test_match_route_method_filter():
             response_rules=ResponseRules(),
         )
     ]
-    assert match_route("/api/orders", "POST", routes) is None
-    assert match_route("/api/orders", "GET", routes).name == "orders"
+    matched, has_path_match = match_route("/api/orders", "POST", routes)
+    assert has_path_match is True
+    assert matched is None
+
+    matched, has_path_match = match_route("/api/orders", "GET", routes)
+    assert has_path_match is True
+    assert matched is not None
+    assert matched.name == "orders"
